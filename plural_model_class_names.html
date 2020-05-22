@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>Plural model class names</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="https://raw.githubusercontent.com/sindresorhus/github-markdown-css/gh-pages/github-markdown.css" type="text/css" />
+</head>
+<body>
+<div id="header">
+<h1 class="title">Plural model class names</h1>
+</div>
+<p>Often people write model classes with a plural name. For example:</p>
+<pre class="python3"><code>class Cars(models.Model):
+    name = models.CharField(max_length=128)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE)</code></pre>
+<h1 id="why-it-is-a-problem">Why it is a problem?</h1>
+<p>Django defines some meta data based on the name of the class. For example the <a href="https://docs.djangoproject.com/en/dev/ref/models/options/#django.db.models.Options.verbose_name"><strong><code>verbose_name</code></strong> [Django-doc]</a> and the <a href="https://docs.djangoproject.com/en/dev/ref/models/options/#django.db.models.Options.verbose_name_plural"><strong><code>verbose_name_plural</code></strong> [Django-doc]</a> are automatically defined if you do not specify these. That thus means that if we inspect the <code>verbose_name_plural</code>, we see:</p>
+<pre><code>&gt;&gt;&gt; Cars._meta.verbose_name_plural
+&#39;carss&#39;</code></pre>
+<p>Django uses this name for example in the admin page. Some Django packages also use the <code>.verbose_name</code> and <code>.verbose_name_plural</code> information to show dialogs in forms, templates, etc. This will result in gramatically incorrect phrases, and incorrect plural nouns.</p>
+<p>It also makes queries look gramatically incorrect English, for example, one queries with:</p>
+<pre class="python3"><code>Cars.objects.all()</code></pre>
+<p>Which can be translated as:</p>
+<blockquote>
+<p>All the <em>cars objects</em>.</p>
+</blockquote>
+<p>The <em>objects</em> are already plular, so it makes no sense to make <em>cars</em> plural as well.</p>
+<p>For related models, this results in ugly looking names as well, for example one queries with:</p>
+<pre class="python3"><code>ford.cars_set.all()</code></pre>
+<p>which again is less elegant compared to <code>car_set</code>.</p>
+<h1 id="what-can-be-done-to-resolve-the-problem">What can be done to resolve the problem?</h1>
+<p>You give the class of the model a singular name, so <code>Car</code> instead of <code>Cars</code>:</p>
+<pre><code>class <b>Car</b>(models.Model):
+    name = models.CharField(max_length=128)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE)</code></pre>
+<p>An alternative could be to specify both the <code>verbose_name</code> and the <code>verbose_name_plural</code>, but even then it is likely that there is some Django tooling, or Django packages that make use of the name of the model, and thus somehow, it still does not look correct.</p>
+<h2 id="extra-tips">Extra tips</h2>
+<p>Sometimes people name the model after the table name in a database that already exists. You can make use of the <a href="https://docs.djangoproject.com/en/3.0/ref/models/options/#django.db.models.Options.db_table"><strong><code>db_table</code></strong> option [Django-doc]</a> to specify the name of database table, and thus still give your model class a singular name.</p>
+</body>
+</html>

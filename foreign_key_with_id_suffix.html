@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>Foreign key with _id suffix</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="https://raw.githubusercontent.com/sindresorhus/github-markdown-css/gh-pages/github-markdown.css" type="text/css" />
+</head>
+<body>
+<div id="header">
+<h1 class="title">Foreign key with <code>_id</code> suffix</h1>
+</div>
+<p>Often people add an <code>_id</code> suffix to the <code>ForeignKey</code>s or <code>OneToOneField</code>s in their models, for example:</p>
+<pre><code>class MyModel(models.Model):
+    other_model<b>_id</b> = models.ForeignKey(OtherModel, on_delete=models.CASCADE)</code></pre>
+<h1 id="why-it-is-a-problem">Why it is a problem?</h1>
+<p>The main reason why it is a problem is because the <code>.other_model</code> itself does <em>not</em> store the id. Indeed, Django makes an implicit <em>twin</em>-field with an <code>_id</code> suffix that stores the primary key (or another unique column if you specify that) to the target model. The <code>ForeignKey</code> itself is designed to (lazily) load the related model.</p>
+<p>It furthermore means that the twin-field Django has constructed is now named <code>other_model_id_id</code>, which is also the default name of the column where it stores the primary key. This name is rather &quot;<em>ugly</em>&quot;.</p>
+<h1 id="what-can-be-done-to-resolve-the-problem">What can be done to resolve the problem</h1>
+<p>Renaming the field without the <code>_id</code> suffix, so change it to:</p>
+<pre><code>class MyModel(models.Model):
+    <b>other_model</b> = models.ForeignKey(OtherMOdel, on_delete=models.CASCADE)</code></pre>
+<p>You will need to run <code>makemigrations</code> to rename the field. The django makemigrations tool will likely detect that you renamed the field and ask:</p>
+<blockquote>
+<p><code>Did you rename mymodel.other_model_id to activity.other_model (a ForeignKey)? [y/N]</code></p>
+</blockquote>
+<p>A question that should be answered with <code>y</code>es.</p>
+</body>
+</html>

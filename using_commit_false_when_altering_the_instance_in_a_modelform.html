@@ -1,0 +1,33 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>Using commit=False when altering the instance in a ModelForm</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="https://raw.githubusercontent.com/sindresorhus/github-markdown-css/gh-pages/github-markdown.css" type="text/css" />
+</head>
+<body>
+<div id="header">
+<h1 class="title">Using <code>commit=False</code> when altering the instance in a <code>ModelForm</code></h1>
+</div>
+<p>Often one sees a pattern where one aims to update an instance wrapped in a <code>ModelForm</code> before creating a record in the database. A programmer often writes:</p>
+<pre><code>form = MyFormClass(request.POST)
+if form.is_valid():
+    object = form.save(<b>commit=False</b>)
+    object.some_attribute = some_value
+    object.save()</code></pre>
+<h1 id="why-it-is-a-problem">Why it is a problem?</h1>
+<p>Because <code>commit=False</code> does not only result in <em>not</em> creating a record at the database. It also has for example impact on many-to-many fields in the form.</p>
+<p>When you thus specify <code>commit=False</code>, the <code>ManyToManyField</code>s of the model that are also present in the form, are not stored in the database either, since at that moment, no primary key for the object exists yet.</p>
+<p>One can of course implement the logic themselves, but the idea of a <code>ModelForm</code> is to remove as much boilerplate code as possible.</p>
+<h1 id="what-can-be-done-to-resolve-the-problem">What can be done to resolve the problem?</h1>
+<p>You alter the instance wrapped in the form <em>before</em> saving the form, so:</p>
+<pre><code>form = MyFormClass(request.POST)
+if form.is_valid():
+    form<b>.instance.some_attribute = some_value</b>
+    form.save()</code></pre>
+<p>That way the form can still handle other tasks it needs to carry out in the <code>save</code> method, and furthermore it is a more &quot;<em>clean</em>&quot; implementation.</p>
+</body>
+</html>
